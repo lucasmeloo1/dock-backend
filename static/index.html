@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dock</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="page-shell">
+    <aside class="brand-panel">
+      <div class="brand-chip">Dock / Personal Intelligence</div>
+      <h1>Clareza para decidir. Interface para agir.</h1>
+      <p class="brand-copy">
+        O Dock transforma pergunta solta em direção concreta. Conversa, contexto e respostas úteis em uma interface que já parece produto.
+      </p>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <span class="metric-label">Modo</span>
+          <strong>Conversa estratégica</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Fonte</span>
+          <strong id="status-source">Backend local</strong>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Saída</span>
+          <strong>Direta, humana, útil</strong>
+        </article>
+      </div>
+
+      <div class="context-panel">
+        <div>
+          <span class="metric-label">Contexto</span>
+          <strong id="location-status">Localização não conectada</strong>
+        </div>
+        <button class="context-button" id="location-button" type="button">Ativar localização</button>
+      </div>
+
+      <div class="prompt-stack">
+        <button class="prompt-card" data-prompt="Quem é o founder da empresa?">
+          Quem é o founder da empresa?
+        </button>
+        <button class="prompt-card" data-prompt="Qual o valor do dólar agora?">
+          Qual o valor do dólar agora?
+        </button>
+        <button class="prompt-card" data-prompt="Qual a temperatura agora em SP?">
+          Qual a temperatura agora em SP?
+        </button>
+        <button class="prompt-card" data-prompt="Me ajuda a organizar meu dia em 3 passos.">
+          Me ajuda a organizar meu dia em 3 passos.
+        </button>
+      </div>
+    </aside>
+
+    <main class="chat-panel">
+      <header class="chat-header">
+        <div>
+          <p class="eyebrow">Dock App</p>
+          <h2>Conversa</h2>
+        </div>
+        <div class="status-pill" id="status-pill">Pronto</div>
+      </header>
+
+      <section class="message-list" id="message-list">
+        <article class="message dock">
+          <div class="message-role">Dock</div>
+          <div class="message-bubble">
+            Eu sou o Dock. Me faz uma pergunta e eu respondo com clareza, contexto e próximo passo.
+          </div>
+        </article>
+      </section>
+
+      <form class="composer" id="chat-form">
+        <label class="composer-label" for="message-input">Mensagem</label>
+        <textarea
+          id="message-input"
+          name="message"
+          rows="3"
+          placeholder="Ex.: quem é o founder da empresa?"
+          required
+        ></textarea>
+        <div class="composer-actions">
+          <p class="composer-hint">Enter envia. Shift + Enter quebra linha.</p>
+          <button type="submit" class="send-button" id="send-button">Enviar</button>
+        </div>
+      </form>
+
+      <section class="workspace">
+        <div class="workspace-header">
+          <p class="eyebrow">MVP</p>
+          <h3>Sistema real do Dock</h3>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+          <article class="stat-card">
+            <span class="metric-label">Hábitos</span>
+            <strong id="stat-habits">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="metric-label">Estudo hoje</span>
+            <strong id="stat-study-today">0 min</strong>
+          </article>
+          <article class="stat-card">
+            <span class="metric-label">Saldo mês</span>
+            <strong id="stat-month-balance">R$ 0,00</strong>
+          </article>
+        </div>
+
+        <div class="forms-grid">
+          <form class="mini-form" id="habit-form">
+            <h4>Novo hábito</h4>
+            <input name="name" placeholder="Ex.: Treinar" required>
+            <input name="target_frequency" type="number" min="1" max="21" value="7" required>
+            <button type="submit" class="send-button">Salvar hábito</button>
+          </form>
+
+          <form class="mini-form" id="study-form">
+            <h4>Sessão de estudo</h4>
+            <input name="subject" placeholder="Ex.: Matemática" required>
+            <input name="duration_minutes" type="number" min="1" placeholder="Minutos" required>
+            <button type="submit" class="send-button">Salvar estudo</button>
+          </form>
+
+          <form class="mini-form" id="finance-form">
+            <h4>Lançamento financeiro</h4>
+            <select name="kind">
+              <option value="expense">Despesa</option>
+              <option value="income">Receita</option>
+            </select>
+            <input name="category" placeholder="Ex.: Mercado" required>
+            <input name="amount" type="number" step="0.01" min="0" placeholder="Valor" required>
+            <button type="submit" class="send-button">Salvar lançamento</button>
+          </form>
+        </div>
+
+        <div class="lists-grid">
+          <section class="data-card">
+            <div class="data-card-header">
+              <h4>Hábitos</h4>
+              <button type="button" class="context-button" id="refresh-dashboard">Atualizar</button>
+            </div>
+            <div id="habit-list" class="data-list"></div>
+          </section>
+
+          <section class="data-card">
+            <h4>Estudo</h4>
+            <div id="study-list" class="data-list"></div>
+          </section>
+
+          <section class="data-card">
+            <h4>Financeiro</h4>
+            <div id="finance-list" class="data-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
