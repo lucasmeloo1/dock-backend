@@ -427,10 +427,22 @@ def format_usd(value: float) -> str:
     return f"US$ {formatted}"
 
 def parse_amount_from_text(text: str) -> float | None:
-    matches = re.findall(r"(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)", text)
+    matches = re.findall(
+        r"(?:r\$\s*)?(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)",
+        text,
+    )
     if not matches:
         return None
-    raw = matches[0].replace(".", "").replace(",", ".")
+    raw = matches[0].strip()
+    if "," in raw and "." in raw:
+        if raw.rfind(",") > raw.rfind("."):
+            raw = raw.replace(".", "").replace(",", ".")
+        else:
+            raw = raw.replace(",", "")
+    elif "," in raw:
+        raw = raw.replace(".", "").replace(",", ".")
+    elif raw.count(".") > 1:
+        raw = raw.replace(".", "")
     try:
         return round(float(raw), 2)
     except ValueError:
@@ -517,8 +529,9 @@ def infer_habit_name(normalized_message: str) -> str | None:
         "malhei": "Treino",
         "corri": "Corrida",
         "caminhei": "Caminhada",
+        "nadei": "Natação",
+        "pedalei": "Bike",
         "meditei": "Meditação",
-        "li": "Leitura",
         "livro": "Leitura",
         "leitura": "Leitura",
         "lembrei de ler": "Leitura",
@@ -536,8 +549,10 @@ def build_habit_aliases() -> dict[str, set[str]]:
         "treino": {"treino", "treinei", "academia", "malhei"},
         "corrida": {"corrida", "corri", "correr"},
         "caminhada": {"caminhada", "caminhei", "caminhar"},
+        "natacao": {"natacao", "nadei", "nadar"},
+        "bike": {"bike", "pedalei", "pedalar", "ciclismo"},
         "meditacao": {"meditacao", "meditei", "meditar"},
-        "leitura": {"leitura", "li", "ler", "livro", "li um livro"},
+        "leitura": {"leitura", "ler", "livro", "li um livro"},
         "estudo": {"estudo", "estudei", "estudar"},
         "agua": {"agua", "bebi agua", "hidratar", "hidratacao"},
     }
@@ -707,7 +722,8 @@ def extract_chat_action(message: str, normalized_message: str) -> ChatAction | N
     habit_name = infer_habit_name(normalized_message)
     if habit_name is not None and contains_any(normalized_message, {
         "fui pra academia", "fui para academia", "treinei", "treino feito", "malhei",
-        "corri", "caminhei", "meditei", "bebi agua", "li", "fiz exercicio", "fiz exercicios"
+        "corri", "caminhei", "nadei", "pedalei", "meditei", "bebi agua",
+        "fiz exercicio", "fiz exercicios", "li um livro", "fiz leitura"
     }):
         return ChatAction(
             action_type="habit_checkin",
@@ -1225,7 +1241,7 @@ def categorize_entry(text: str) -> str:
     }):
         return "sleep"
     elif contains_any(text, {
-        "estudei", "estudar", "estudo", "li", "leitura", "read", "studied"
+        "estudei", "estudar", "estudo", "leitura", "livro", "read", "studied"
     }):
         return "study"
     else:
@@ -1453,6 +1469,272 @@ def build_dock_context_summary() -> str:
         f"Saldo do mês: {format_brl(finance['month_balance'])}."
     )
 
+def shorten_text(text: str, limit: int = 96) -> str:
+    cleaned = " ".join(text.strip().split())
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: limit - 3].rstrip() + "..."
+
+def dedupe_phrases(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in items:
+        normalized_item = normalize_text(item)
+        if not normalized_item or normalized_item in seen:
+            continue
+        seen.add(normalized_item)
+        result.append(item)
+    return result
+
+def extract_action_items(message: str, limit: int = 4) -> list[str]:
+    prepared = re.sub(r"[\r\n]+", ", ", message)
+    chunks = re.split(r"[;,:]", prepared)
+    if len(chunks) == 1 and len(re.findall(r"\s+e\s+", prepared, flags=re.IGNORECASE)) >= 2:
+        chunks = re.split(r"\s+e\s+", prepared, flags=re.IGNORECASE)
+
+    noise_prefixes = {
+        "estou com muita coisa", "to com muita coisa", "tô com muita coisa",
+        "muita coisa", "estou perdido", "to perdido", "tô perdido",
+        "estou confuso", "to confuso", "tô confuso", "estou sobrecarregado",
+        "to sobrecarregado", "tô sobrecarregado", "estou sobrecarregada",
+        "to sobrecarregada", "tô sobrecarregada",
+    }
+
+    items: list[str] = []
+    for chunk in chunks:
+        subchunks = re.split(r"\s+e\s+", chunk, flags=re.IGNORECASE)
+        for subchunk in subchunks:
+            cleaned = subchunk.strip(" .,!?:;")
+            if not cleaned:
+                continue
+            cleaned = re.sub(
+                r"^(?:eu\s+)?(?:preciso|tenho que|quero|devo|precisava|"
+                r"estou precisando de|to precisando de|tô precisando de|"
+                r"me ajuda a|me ajude a)\s+",
+                "",
+                cleaned,
+                flags=re.IGNORECASE,
+            ).strip(" .,!?:;")
+            normalized_cleaned = normalize_text(cleaned)
+            if any(normalized_cleaned.startswith(prefix) for prefix in noise_prefixes):
+                continue
+            if len(normalized_cleaned) < 8 or len(cleaned.split()) < 2:
+                continue
+            items.append(shorten_text(cleaned, 72))
+    return dedupe_phrases(items)[:limit]
+
+def join_readable_list(items: list[str]) -> str:
+    cleaned = [item for item in items if item]
+    if not cleaned:
+        return ""
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return f"{cleaned[0]} e {cleaned[1]}"
+    return f"{', '.join(cleaned[:-1])} e {cleaned[-1]}"
+
+def pick_dashboard_attention_signal(dashboard: dict) -> str | None:
+    finance = dashboard["finance"]
+    study = dashboard["study"]
+    habits = dashboard["habits"]
+
+    if finance["month_balance"] < 0:
+        return f"o financeiro do mês está negativo em {format_brl(abs(finance['month_balance']))}"
+
+    if study["today_minutes"] == 0 and study["week_minutes"] == 0:
+        return "o estudo ainda não entrou em tração nesta semana"
+
+    if habits:
+        weakest = min(habits, key=lambda item: float(item["completion_rate"]))
+        if float(weakest["completion_rate"]) < 50:
+            return f"o hábito {weakest['name']} ainda está abaixo da metade da meta semanal"
+    else:
+        return "você ainda não tem hábitos ativos registrados no painel"
+
+    return None
+
+def build_dashboard_overview_reply(dashboard: dict) -> str:
+    habits = dashboard["habits"]
+    study = dashboard["study"]
+    finance = dashboard["finance"]
+
+    if habits:
+        best_habit = max(habits, key=lambda item: float(item["completion_rate"]))
+        habit_line = (
+            f"Você tem {len(habits)} hábitos ativos, e o melhor ritmo agora é {best_habit['name']} "
+            f"com {best_habit['weekly_progress']}/{best_habit['target_frequency']} na semana."
+        )
+    else:
+        habit_line = "Você ainda não tem hábitos ativos no painel."
+
+    study_line = (
+        f"De estudo, você soma {study['today_minutes']} minutos hoje "
+        f"e {study['week_minutes']} minutos na semana."
+    )
+    finance_line = (
+        f"No financeiro do mês, entraram {format_brl(finance['month_income'])}, "
+        f"saíram {format_brl(finance['month_expense'])} e o saldo está em {format_brl(finance['month_balance'])}."
+    )
+
+    attention = pick_dashboard_attention_signal(dashboard)
+    if attention:
+        return f"{habit_line} {study_line} {finance_line} O ponto que mais pede atenção agora é: {attention}."
+    return f"{habit_line} {study_line} {finance_line}"
+
+def build_local_plan_reply(message: str, dashboard: dict) -> str:
+    tasks = extract_action_items(message)
+    attention = pick_dashboard_attention_signal(dashboard)
+
+    if tasks:
+        steps = [f"1. Puxa {tasks[0]} para o primeiro bloco de foco."]
+        if len(tasks) >= 2:
+            steps.append(f"2. Depois fecha {tasks[1]} sem abrir outra frente no meio.")
+        else:
+            steps.append("2. Depois resolve a pendência curta que mais destrava o restante.")
+        if len(tasks) >= 3:
+            steps.append(f"3. Antes de encerrar, deixa o próximo passo de {tasks[2]} definido.")
+        else:
+            steps.append("3. Antes de encerrar, deixa um próximo passo claro para amanhã.")
+        reply = f"Vamos reduzir isso ao essencial. {' '.join(steps)}"
+    else:
+        reply = (
+            "Vamos tirar isso do abstrato. 1. Escolhe a frente que muda o resultado de hoje. "
+            "2. Reserva um bloco curto sem distração para executar. "
+            "3. Fecha o dia deixando a próxima ação escrita, não só pensada."
+        )
+
+    if attention:
+        reply += f" Sinal do painel: {attention}."
+    return reply
+
+def build_local_decision_reply(message: str) -> str:
+    match = re.search(
+        r"\b(?:devo|melhor|vale|escolho|escolher|entre)\s+(.+?)\s+ou\s+(.+?)(?:[?.!]|$)",
+        message,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        option_a = shorten_text(match.group(1).strip(" .,!?:;"), 60)
+        option_b = shorten_text(match.group(2).strip(" .,!?:;"), 60)
+        return (
+            f"Se a decisão é entre {option_a} e {option_b}, escolhe o que reduz risco "
+            "ou destrava o resto ainda hoje. Meu corte prático: se a primeira opção fecha "
+            "uma pendência crítica, vai nela; se não, faz a outra e já deixa a primeira "
+            "com um próximo passo definido."
+        )
+
+    return (
+        "Escolhe pelo que gera mais clareza nas próximas 24 horas. "
+        "Se uma opção reduz risco ou fecha pendência crítica, ela vem primeiro; "
+        "a outra vira próximo passo agendado, não pendência vaga."
+    )
+
+def build_local_history_summary(history: list[Message]) -> str | None:
+    last_user_message: str | None = None
+    for item in reversed(history):
+        if item.role.strip().lower() == "user" and item.content.strip():
+            last_user_message = item.content.strip()
+            break
+
+    if not last_user_message:
+        return None
+
+    tasks = extract_action_items(last_user_message, limit=3)
+    if tasks:
+        return (
+            f"Em resumo: você está tentando lidar com {join_readable_list(tasks)} ao mesmo tempo. "
+            "O melhor próximo passo é escolher uma frente e fechar um bloco de execução antes "
+            "de reorganizar o restante."
+        )
+
+    first_sentence = re.split(r"[.!?]+", last_user_message, maxsplit=1)[0]
+    return (
+        f"Em resumo: {shorten_text(first_sentence, 140)}. "
+        "Se quiser, eu também transformo isso em prioridades ou próximos passos."
+    )
+
+def summarize_entry_locally(text: str, category: str) -> tuple[str, float]:
+    normalized_text = normalize_text(text)
+
+    if category == "finance":
+        amount = parse_amount_from_text(normalized_text)
+        category_label = infer_finance_category(normalized_text)
+        if contains_any(normalized_text, {"recebi", "ganhei"}):
+            if amount is not None:
+                return f"Receita em {category_label} de {format_brl(amount)}.", 0.82
+            return f"Registro de receita relacionado a {category_label}.", 0.64
+        if amount is not None:
+            return f"Despesa em {category_label} de {format_brl(amount)}.", 0.8
+        return f"Registro financeiro relacionado a {category_label}.", 0.6
+
+    if category == "study":
+        subject = infer_study_subject(normalized_text)
+        duration = parse_duration_minutes(normalized_text)
+        if duration is not None:
+            return f"Estudo de {subject} por {duration} minutos.", 0.8
+        return f"Registro de estudo em {subject}.", 0.62
+
+    if category == "sleep":
+        hours_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(h|hora|horas)\b", normalized_text)
+        if hours_match:
+            hours = hours_match.group(1).replace(",", ".")
+            return f"Registro de sono com cerca de {hours} horas.", 0.74
+        return "Registro relacionado a sono e descanso.", 0.56
+
+    return shorten_text(" ".join(text.strip().split()), 120), 0.4
+
+def try_local_brain_reply(message: str, normalized_message: str, history: list[Message]) -> dict | None:
+    overview_terms = {
+        "como estou", "como eu estou", "me atualiza", "panorama", "visao geral",
+        "visão geral", "status geral", "resumo geral", "como ta minha rotina",
+        "como ta meu dia", "como esta meu dia", "me da um panorama",
+    }
+    planning_terms = {
+        "prioridade", "prioridades", "organizar", "planejar", "amanha", "amanhã",
+        "rotina", "semana", "o que faco agora", "o que fazer agora",
+        "por onde comeco", "por onde começar", "proximo passo", "próximo passo",
+        "me ajuda", "me ajude",
+    }
+    overload_terms = {
+        "sobrecarregado", "sobrecarregada", "perdido", "perdida", "confuso",
+        "confusa", "ansioso", "ansiosa", "atrasado", "atrasada", "muita coisa",
+        "sem direcao", "sem direção", "caos",
+    }
+
+    if contains_any(normalized_message, overview_terms):
+        dashboard = get_dashboard_summary()
+        return {
+            "reply": build_dashboard_overview_reply(dashboard),
+            "source": "dock-data-overview",
+            "model": None,
+        }
+
+    if contains_any(normalized_message, {"resuma isso", "resume isso", "resuma o que eu disse", "resume o que eu disse", "resuma acima", "resume acima"}):
+        summary = build_local_history_summary(history)
+        if summary is not None:
+            return {
+                "reply": summary,
+                "source": "dock-local-summary",
+                "model": None,
+            }
+
+    if " ou " in normalized_message and contains_any(normalized_message, {"devo", "melhor", "vale", "escolho", "escolher", "entre"}):
+        return {
+            "reply": build_local_decision_reply(message),
+            "source": "dock-local-decision",
+            "model": None,
+        }
+
+    if contains_any(normalized_message, planning_terms | overload_terms):
+        dashboard = get_dashboard_summary()
+        return {
+            "reply": build_local_plan_reply(message, dashboard),
+            "source": "dock-local-plan",
+            "model": None,
+        }
+
+    return None
+
 def generate_chat_reply(message: str, history: list[Message], location: LocationContext | None = None) -> dict:
     context_summary = build_dock_context_summary()
 
@@ -1674,11 +1956,12 @@ Entry: {text}
         }
     except (error.URLError, TimeoutError, json.JSONDecodeError, KeyError, ValueError):
         fallback_category = categorize_entry(text)
+        fallback_summary, fallback_confidence = summarize_entry_locally(text, fallback_category)
         return {
             "category": fallback_category,
-            "summary": "IA indisponível, usando fallback por regras.",
-            "confidence": 0.0,
-            "source": "fallback",
+            "summary": fallback_summary,
+            "confidence": fallback_confidence,
+            "source": "dock-local-analysis",
             "model": None,
         }
 
@@ -1712,13 +1995,17 @@ def chat_with_ai(message: str, history: list[Message], location: LocationContext
     if live_weather_reply is not None:
         return live_weather_reply
 
-    fast_local_reply = try_fast_local_reply(normalized_message)
-    if fast_local_reply is not None:
-        return fast_local_reply
-
     data_backed_reply = try_data_backed_reply(normalized_message)
     if data_backed_reply is not None:
         return data_backed_reply
+
+    local_brain_reply = try_local_brain_reply(message, normalized_message, history)
+    if local_brain_reply is not None:
+        return local_brain_reply
+
+    fast_local_reply = try_fast_local_reply(normalized_message)
+    if fast_local_reply is not None:
+        return fast_local_reply
 
     try:
         return generate_chat_reply(message, history, location)

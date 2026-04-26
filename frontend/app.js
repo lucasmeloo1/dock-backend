@@ -144,6 +144,9 @@ function humanizeSource(source) {
   if (normalized.startsWith("dock-data-")) {
     return "Painel Dock";
   }
+  if (normalized.startsWith("dock-local-")) {
+    return "Motor local Dock";
+  }
   if (normalized.startsWith("dock-action-")) {
     return "Automacao Dock";
   }
