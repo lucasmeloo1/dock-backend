@@ -7,153 +7,279 @@
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <div class="page-shell">
-    <aside class="brand-panel">
-      <div class="brand-chip">Dock / Personal Intelligence</div>
-      <h1>Clareza para decidir. Interface para agir.</h1>
-      <p class="brand-copy">
-        O Dock transforma pergunta solta em direção concreta. Conversa, contexto e respostas úteis em uma interface que já parece produto.
-      </p>
-
-      <div class="metric-grid">
-        <article class="metric-card">
-          <span class="metric-label">Modo</span>
-          <strong>Conversa estratégica</strong>
-        </article>
-        <article class="metric-card">
-          <span class="metric-label">Fonte</span>
-          <strong id="status-source">Backend local</strong>
-        </article>
-        <article class="metric-card">
-          <span class="metric-label">Saída</span>
-          <strong>Direta, humana, útil</strong>
-        </article>
+  <div class="app-shell">
+    <aside class="side-rail">
+      <div class="rail-brand">
+        <img class="rail-logo" src="/static/assets/dock-logo.png" alt="Dock logo">
+        <img class="rail-wordmark" src="/static/assets/dock-wordmark.png" alt="Dock">
       </div>
 
-      <div class="context-panel">
-        <div>
-          <span class="metric-label">Contexto</span>
-          <strong id="location-status">Localização não conectada</strong>
-        </div>
-        <button class="context-button" id="location-button" type="button">Ativar localização</button>
-      </div>
+      <nav class="rail-nav sidebar-nav" aria-label="Navegação principal">
+        <a class="rail-tab nav-tab active" href="#conversation" data-tab="conversation">
+          <span class="tab-icon">✦</span>
+          <span>Conversa</span>
+        </a>
+        <a class="rail-tab nav-tab" href="#habits" data-tab="habits">
+          <span class="tab-icon">◎</span>
+          <span>Hábitos</span>
+        </a>
+        <a class="rail-tab nav-tab" href="#study" data-tab="study">
+          <span class="tab-icon">◫</span>
+          <span>Estudo</span>
+        </a>
+        <a class="rail-tab nav-tab" href="#finance" data-tab="finance">
+          <span class="tab-icon">◌</span>
+          <span>Financeiro</span>
+        </a>
+      </nav>
 
-      <div class="prompt-stack">
-        <button class="prompt-card" data-prompt="Quem é o founder da empresa?">
-          Quem é o founder da empresa?
-        </button>
-        <button class="prompt-card" data-prompt="Qual o valor do dólar agora?">
-          Qual o valor do dólar agora?
-        </button>
-        <button class="prompt-card" data-prompt="Qual a temperatura agora em SP?">
-          Qual a temperatura agora em SP?
-        </button>
-        <button class="prompt-card" data-prompt="Me ajuda a organizar meu dia em 3 passos.">
-          Me ajuda a organizar meu dia em 3 passos.
-        </button>
-      </div>
-    </aside>
-
-    <main class="chat-panel">
-      <header class="chat-header">
-        <div>
-          <p class="eyebrow">Dock App</p>
-          <h2>Conversa</h2>
-        </div>
-        <div class="status-pill" id="status-pill">Pronto</div>
-      </header>
-
-      <section class="message-list" id="message-list">
-        <article class="message dock">
-          <div class="message-role">Dock</div>
-          <div class="message-bubble">
-            Eu sou o Dock. Me faz uma pergunta e eu respondo com clareza, contexto e próximo passo.
-          </div>
-        </article>
+      <section class="rail-card sidebar-card">
+        <span class="metric-label">Contexto</span>
+        <strong id="location-status">Localização não conectada</strong>
+        <button class="secondary-button" id="location-button" type="button">Ativar localização</button>
       </section>
 
-      <form class="composer" id="chat-form">
-        <label class="composer-label" for="message-input">Mensagem</label>
-        <textarea
-          id="message-input"
-          name="message"
-          rows="3"
-          placeholder="Ex.: quem é o founder da empresa?"
-          required
-        ></textarea>
-        <div class="composer-actions">
-          <p class="composer-hint">Enter envia. Shift + Enter quebra linha.</p>
-          <button type="submit" class="send-button" id="send-button">Enviar</button>
-        </div>
-      </form>
-
-      <section class="workspace">
-        <div class="workspace-header">
-          <p class="eyebrow">MVP</p>
-          <h3>Sistema real do Dock</h3>
-        </div>
-
-        <div class="stats-grid" id="stats-grid">
-          <article class="stat-card">
-            <span class="metric-label">Hábitos</span>
+      <section class="rail-card sidebar-card">
+        <span class="metric-label">Resumo</span>
+        <div class="summary-list">
+          <div class="summary-item">
+            <span>Hábitos</span>
             <strong id="stat-habits">0</strong>
-          </article>
-          <article class="stat-card">
-            <span class="metric-label">Estudo hoje</span>
+          </div>
+          <div class="summary-item">
+            <span>Estudo hoje</span>
             <strong id="stat-study-today">0 min</strong>
-          </article>
-          <article class="stat-card">
-            <span class="metric-label">Saldo mês</span>
+          </div>
+          <div class="summary-item">
+            <span>Saldo mês</span>
             <strong id="stat-month-balance">R$ 0,00</strong>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <header class="top-header content-header">
+        <div class="top-left">
+          <p class="eyebrow">Dock App</p>
+          <h1 id="page-title">Conversa</h1>
+          <p class="header-note">Assistente inteligente para rotina, estudo e finanças.</p>
+        </div>
+        <div class="top-right">
+          <span class="status-chip" id="status-source">Backend local</span>
+          <span class="status-chip primary" id="status-pill">Pronto</span>
+        </div>
+      </header>
+
+      <section class="tab-panel active" data-panel="conversation">
+        <section class="hero-grid">
+          <article class="panel-card hero-primary">
+            <p class="eyebrow">Assistente</p>
+            <h2>Converse com o Dock</h2>
+            <p class="hero-copy">Pergunte naturalmente e receba respostas com contexto e próximo passo.</p>
+            <div class="prompt-row">
+              <button class="prompt-card" data-prompt="Quem é o founder da empresa?">Founder</button>
+              <button class="prompt-card" data-prompt="Qual o valor do dólar agora?">Dólar</button>
+              <button class="prompt-card" data-prompt="Qual a temperatura agora em SP?">Clima</button>
+              <button class="prompt-card" data-prompt="Me ajuda a organizar meu dia em 3 passos.">Meu dia</button>
+            </div>
+          </article>
+
+          <article class="panel-card hero-metrics">
+            <div class="metric-stack">
+              <span class="metric-label">Fonte</span>
+              <strong id="conversation-metric-source">Backend local</strong>
+            </div>
+            <div class="metric-stack">
+              <span class="metric-label">Estado</span>
+              <strong id="conversation-metric-status">Pronto</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel-card message-card">
+          <div class="message-list" id="message-list">
+            <article class="message dock">
+              <div class="message-role">Dock</div>
+              <div class="message-bubble">
+                Eu sou o Dock. Me faz uma pergunta e eu respondo com clareza, contexto e próximo passo.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <form class="panel-card composer" id="chat-form">
+          <label class="composer-label" for="message-input">Mensagem</label>
+          <textarea
+            id="message-input"
+            name="message"
+            rows="4"
+            placeholder="Ex.: estudei matemática 45 minutos hoje"
+            required
+          ></textarea>
+          <div class="composer-actions">
+            <p class="composer-hint">Enter envia. Shift + Enter quebra linha.</p>
+            <button type="submit" class="primary-button" id="send-button">Enviar</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="tab-panel" data-panel="habits" hidden>
+        <div class="tab-metrics">
+          <article class="metric-card">
+            <span class="metric-label">Hábitos</span>
+            <strong id="habits-metric-count">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Melhor ritmo</span>
+            <strong id="habits-metric-best">Sem dados</strong>
           </article>
         </div>
 
-        <div class="forms-grid">
-          <form class="mini-form" id="habit-form">
-            <h4>Novo hábito</h4>
-            <input name="name" placeholder="Ex.: Treinar" required>
-            <input name="target_frequency" type="number" min="1" max="21" value="7" required>
-            <button type="submit" class="send-button">Salvar hábito</button>
-          </form>
-
-          <form class="mini-form" id="study-form">
-            <h4>Sessão de estudo</h4>
-            <input name="subject" placeholder="Ex.: Matemática" required>
-            <input name="duration_minutes" type="number" min="1" placeholder="Minutos" required>
-            <button type="submit" class="send-button">Salvar estudo</button>
-          </form>
-
-          <form class="mini-form" id="finance-form">
-            <h4>Lançamento financeiro</h4>
-            <select name="kind">
-              <option value="expense">Despesa</option>
-              <option value="income">Receita</option>
-            </select>
-            <input name="category" placeholder="Ex.: Mercado" required>
-            <input name="amount" type="number" step="0.01" min="0" placeholder="Valor" required>
-            <button type="submit" class="send-button">Salvar lançamento</button>
-          </form>
-        </div>
-
-        <div class="lists-grid">
-          <section class="data-card">
-            <div class="data-card-header">
-              <h4>Hábitos</h4>
-              <button type="button" class="context-button" id="refresh-dashboard">Atualizar</button>
+        <section class="dashboard-grid two-up">
+          <article class="panel-card gradient-card gradient-habits">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Hábitos</p>
+                <h2>Produtividade semanal</h2>
+              </div>
+              <strong id="habits-weekly-score">0%</strong>
             </div>
-            <div id="habit-list" class="data-list"></div>
-          </section>
+            <p class="dashboard-copy">Quanto da meta semanal você já executou.</p>
+            <div class="progress-shell">
+              <div class="progress-fill" id="habits-progress-fill"></div>
+            </div>
+            <button type="button" class="secondary-button" id="refresh-dashboard">Atualizar dados</button>
+          </article>
 
-          <section class="data-card">
-            <h4>Estudo</h4>
-            <div id="study-list" class="data-list"></div>
-          </section>
+          <article class="panel-card chart-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Ritmo</p>
+                <h2>Top hábitos</h2>
+              </div>
+            </div>
+            <div class="bars-list" id="habits-bars"></div>
+          </article>
+        </section>
 
-          <section class="data-card">
-            <h4>Financeiro</h4>
-            <div id="finance-list" class="data-list"></div>
-          </section>
+        <section class="panel-card list-card">
+          <div class="section-head">
+            <p class="eyebrow">Hábitos</p>
+            <h2>Seu progresso</h2>
+          </div>
+          <div id="habit-list" class="data-list"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="study" hidden>
+        <div class="tab-metrics">
+          <article class="metric-card">
+            <span class="metric-label">Hoje</span>
+            <strong id="study-metric-today">0 min</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Semana</span>
+            <strong id="study-metric-week">0 min</strong>
+          </article>
         </div>
+
+        <section class="dashboard-grid two-up">
+          <article class="panel-card gradient-card gradient-study">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Estudo</p>
+                <h2>Produtividade semanal</h2>
+              </div>
+              <strong id="study-weekly-score">0 min</strong>
+            </div>
+            <p class="dashboard-copy">Volume acumulado da semana com base no que você mandou no chat.</p>
+            <div class="progress-shell">
+              <div class="progress-fill study-fill" id="study-progress-fill"></div>
+            </div>
+          </article>
+
+          <article class="panel-card chart-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Semana</p>
+                <h2>Últimos 7 dias</h2>
+              </div>
+            </div>
+            <div class="bars-list daily-bars" id="study-bars"></div>
+          </article>
+        </section>
+
+        <section class="panel-card list-card">
+          <div class="section-head">
+            <p class="eyebrow">Estudo</p>
+            <h2>Resumo da semana</h2>
+          </div>
+          <div id="study-list" class="data-list"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-panel="finance" hidden>
+        <div class="tab-metrics">
+          <article class="metric-card">
+            <span class="metric-label">Saldo mês</span>
+            <strong id="finance-metric-balance">R$ 0,00</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Saídas mês</span>
+            <strong id="finance-metric-expense">R$ 0,00</strong>
+          </article>
+        </div>
+
+        <section class="dashboard-grid two-up">
+          <article class="panel-card gradient-card gradient-finance">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Financeiro</p>
+                <h2>Receitas x despesas</h2>
+              </div>
+              <strong id="finance-income-share">0%</strong>
+            </div>
+            <p class="dashboard-copy">Distribuição mensal para visualizar entradas e saídas.</p>
+            <div class="finance-pie-card">
+              <div class="pie-chart" id="finance-pie"></div>
+              <div class="pie-legend">
+                <div class="legend-item">
+                  <span class="legend-swatch income"></span>
+                  <div>
+                    <small>Receitas</small>
+                    <strong id="finance-income-total">R$ 0,00</strong>
+                  </div>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-swatch expense"></span>
+                  <div>
+                    <small>Despesas</small>
+                    <strong id="finance-expense-total">R$ 0,00</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel-card chart-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Categorias</p>
+                <h2>Saídas do mês</h2>
+              </div>
+            </div>
+            <div class="bars-list" id="finance-bars"></div>
+          </article>
+        </section>
+
+        <section class="panel-card list-card">
+          <div class="section-head">
+            <p class="eyebrow">Financeiro</p>
+            <h2>Categorias do mês</h2>
+          </div>
+          <div id="finance-list" class="data-list"></div>
+        </section>
       </section>
     </main>
   </div>

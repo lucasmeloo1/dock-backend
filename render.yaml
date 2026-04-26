@@ -14,10 +14,18 @@ services:
           property: connectionString
       - key: PYTHON_VERSION
         value: 3.12.8
+      - key: APP_TIMEZONE
+        value: America/Sao_Paulo
+      - key: AI_PROVIDER
+        value: auto
+      - key: CHAT_TIMEOUT_SECONDS
+        value: "12"
+      - key: AI_TIMEOUT_SECONDS
+        value: "15"
+      - key: LIVE_DATA_TIMEOUT_SECONDS
+        value: "8"
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
-      - key: AI_PROVIDER
-        sync: false
       - key: OPENAI_API_KEY
         sync: false
 
