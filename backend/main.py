@@ -1486,6 +1486,25 @@ def dedupe_phrases(items: list[str]) -> list[str]:
         result.append(item)
     return result
 
+def is_actionable_phrase(normalized_text: str) -> bool:
+    blocked_prefixes = {
+        "to meio", "tô meio", "estou meio", "me sinto", "me sentindo",
+        "isso ta", "isso está", "nao sei", "não sei", "como faco",
+        "como faço", "o que faco", "o que faço", "quero mudar minha vida",
+        "mudar minha vida", "crescer no trabalho", "me sinto perdido",
+        "estou perdido", "estou confuso", "to confuso", "tô confuso",
+    }
+    if any(normalized_text.startswith(prefix) for prefix in blocked_prefixes):
+        return False
+
+    action_terms = {
+        "terminar", "responder", "organizar", "estudar", "enviar", "ligar",
+        "revisar", "pagar", "resolver", "fechar", "falar", "treinar",
+        "comprar", "ajustar", "planejar", "escrever", "montar", "criar",
+        "limpar", "entregar", "preparar", "priorizar", "separar",
+    }
+    return contains_any(normalized_text, action_terms)
+
 def extract_action_items(message: str, limit: int = 4) -> list[str]:
     prepared = re.sub(r"[\r\n]+", ", ", message)
     chunks = re.split(r"[;,:]", prepared)
@@ -1497,7 +1516,8 @@ def extract_action_items(message: str, limit: int = 4) -> list[str]:
         "muita coisa", "estou perdido", "to perdido", "tô perdido",
         "estou confuso", "to confuso", "tô confuso", "estou sobrecarregado",
         "to sobrecarregado", "tô sobrecarregado", "estou sobrecarregada",
-        "to sobrecarregada", "tô sobrecarregada",
+        "to sobrecarregada", "tô sobrecarregada", "nao sei o que fazer agora",
+        "não sei o que fazer agora", "nao sei por onde comecar", "não sei por onde começar",
     }
 
     items: list[str] = []
@@ -1517,6 +1537,8 @@ def extract_action_items(message: str, limit: int = 4) -> list[str]:
             ).strip(" .,!?:;")
             normalized_cleaned = normalize_text(cleaned)
             if any(normalized_cleaned.startswith(prefix) for prefix in noise_prefixes):
+                continue
+            if not is_actionable_phrase(normalized_cleaned):
                 continue
             if len(normalized_cleaned) < 8 or len(cleaned.split()) < 2:
                 continue
@@ -1735,6 +1757,139 @@ def try_local_brain_reply(message: str, normalized_message: str, history: list[M
 
     return None
 
+def infer_focus_area(normalized_message: str) -> str | None:
+    area_terms = {
+        "trabalho": {"trabalho", "carreira", "profissional", "empresa", "cliente", "proposta", "emprego"},
+        "financeiro": {"dinheiro", "financeiro", "financas", "finanças", "gasto", "receita", "despesa", "grana"},
+        "estudo": {"estudo", "estudar", "curso", "aprender", "prova", "disciplina"},
+        "rotina": {"rotina", "dia", "semana", "agenda", "organizacao", "organização"},
+        "saude": {"saude", "saúde", "sono", "treino", "academia", "energia", "alimentacao", "alimentação"},
+    }
+    for area, terms in area_terms.items():
+        if contains_any(normalized_message, terms):
+            return area
+    return None
+
+def looks_like_question(normalized_message: str) -> bool:
+    question_terms = {
+        "como", "o que", "qual", "quais", "porque", "por que",
+        "vale", "devo", "seria melhor", "faz sentido", "compensa",
+    }
+    return normalized_message.endswith("?") or contains_any(normalized_message, question_terms)
+
+def build_local_open_chat_reply(message: str, normalized_message: str, history: list[Message]) -> dict:
+    dashboard = get_dashboard_summary()
+    attention = pick_dashboard_attention_signal(dashboard)
+    tasks = extract_action_items(message, limit=3)
+    focus_area = infer_focus_area(normalized_message)
+
+    if contains_any(normalized_message, {"mudar minha vida", "melhorar minha vida", "quero evoluir", "quero sair do lugar", "dar uma virada"}):
+        reply = (
+            "Se você quer mudar de vida, não tenta virar tudo de uma vez. "
+            "Escolhe a frente que mais pesa agora, define um resultado concreto para os próximos 7 dias "
+            "e corta o que só ocupa cabeça sem mover nada."
+        )
+        if attention:
+            reply += f" Pelo painel, o ponto mais sensível hoje é: {attention}."
+        return {"reply": reply, "source": "dock-local-open-chat", "model": None}
+
+    if contains_any(normalized_message, {"crescer no trabalho", "crescer profissionalmente", "evoluir na carreira", "subir de nivel", "subir de nível"}):
+        return {
+            "reply": (
+                "Para crescer no trabalho sem cair em teoria vaga, foca em três alavancas: "
+                "entrega visível, comunicação clara e consistência. Escolhe uma entrega que mova resultado nesta semana, "
+                "alinha expectativa com quem decide e fecha o ciclo mostrando avanço de forma objetiva."
+            ),
+            "source": "dock-local-open-chat",
+            "model": None,
+        }
+
+    if contains_any(normalized_message, {"travado", "travada", "desanimado", "desanimada", "sem energia", "sem vontade", "to meio travado", "tô meio travado"}):
+        reply = (
+            "Quando você trava, não procura a resposta perfeita antes de agir. "
+            "Reduz para uma ação pequena que cria movimento, fecha um bloco curto sem distração "
+            "e só depois reavalia o resto."
+        )
+        if tasks:
+            reply += f" Se eu cortasse isso agora, começaria por {tasks[0]}."
+        elif attention:
+            reply += f" O painel também está sinalizando que {attention}."
+        return {"reply": reply, "source": "dock-local-open-chat", "model": None}
+
+    if contains_any(normalized_message, {"nao sei o que fazer agora", "não sei o que fazer agora", "nao sei por onde comecar", "não sei por onde começar"}):
+        return {
+            "reply": build_local_plan_reply(message, dashboard),
+            "source": "dock-local-open-chat",
+            "model": None,
+        }
+
+    if tasks:
+        steps = [f"1. Começa por {tasks[0]}."]
+        if len(tasks) >= 2:
+            steps.append(f"2. Depois fecha {tasks[1]} sem reabrir a primeira frente.")
+        else:
+            steps.append("2. Depois resolve a menor pendência que destrava o restante.")
+        if len(tasks) >= 3:
+            steps.append(f"3. Antes de encerrar, deixa {tasks[2]} com próximo passo definido.")
+        reply = f"Isso já dá para transformar em ação. {' '.join(steps)}"
+        if attention:
+            reply += f" E fica atento porque {attention}."
+        return {"reply": reply, "source": "dock-local-open-chat", "model": None}
+
+    if looks_like_question(normalized_message):
+        if focus_area == "trabalho":
+            reply = (
+                "Se a questão é trabalho, eu trataria assim: primeiro define qual resultado precisa sair, "
+                "depois reduz isso a uma entrega visível e por fim comunica avanço antes de ficar perfeito. "
+                "Isso tende a gerar mais tração do que tentar resolver tudo só no pensamento."
+            )
+        elif focus_area == "financeiro":
+            reply = (
+                "Se a questão é financeira, o corte certo é separar decisão de impulso. "
+                "Olha o impacto no mês, define um limite claro e só mantém o que preserva caixa ou gera retorno real."
+            )
+        elif focus_area == "estudo":
+            reply = (
+                "Se a questão é estudo, pensa menos em volume abstrato e mais em constância. "
+                "Define o tema, o tempo do bloco e o critério de saída antes de começar."
+            )
+        else:
+            reply = (
+                "Do jeito que você colocou, eu trataria isso transformando a dúvida em decisão prática. "
+                "Primeiro identifica o que muda o resultado agora, depois escolhe a ação mais curta que reduz incerteza "
+                "e só então decide o restante."
+            )
+        if attention:
+            reply += f" Hoje o painel também mostra que {attention}."
+        return {"reply": reply, "source": "dock-local-open-chat", "model": None}
+
+    if history and contains_any(normalized_message, {"isso", "nisso", "assim", "desse jeito", "dessa forma"}):
+        summary = build_local_history_summary(history)
+        if summary is not None:
+            return {
+                "reply": f"{summary} Se quiser, eu transformo isso em um plano direto agora.",
+                "source": "dock-local-open-chat",
+                "model": None,
+            }
+
+    area_hint = {
+        "trabalho": "trabalho e execução",
+        "financeiro": "dinheiro e decisões financeiras",
+        "estudo": "estudo e evolução",
+        "rotina": "rotina e prioridades",
+        "saude": "energia e consistência",
+    }.get(focus_area, "clareza e execução")
+
+    reply = (
+        f"Pelo que você trouxe, o tema aqui parece ser {area_hint}. "
+        "Em vez de deixar isso solto, meu corte prático é escolher uma frente concreta para hoje, "
+        "definir um bloco curto de execução e usar o Dock para registrar o que avançou."
+    )
+    if attention:
+        reply += f" O ponto do painel que mais pede cuidado agora é: {attention}."
+    reply += " Se quiser, eu também posso transformar essa mensagem em 3 passos objetivos."
+    return {"reply": reply, "source": "dock-local-open-chat", "model": None}
+
 def generate_chat_reply(message: str, history: list[Message], location: LocationContext | None = None) -> dict:
     context_summary = build_dock_context_summary()
 
@@ -1786,7 +1941,7 @@ def generate_chat_reply(message: str, history: list[Message], location: Location
         reply = call_ollama(compact_prompt, timeout=CHAT_TIMEOUT_SECONDS)
         return {"reply": reply, "source": "ollama", "model": OLLAMA_MODEL}
 
-    raise ValueError("AI provider disabled")
+    return build_local_open_chat_reply(message, normalize_text(message), history)
 
 def try_fast_local_reply(normalized_message: str) -> dict | None:
     intent = classify_message_intent(normalized_message)
@@ -2010,7 +2165,7 @@ def chat_with_ai(message: str, history: list[Message], location: LocationContext
     try:
         return generate_chat_reply(message, history, location)
     except (error.URLError, TimeoutError, json.JSONDecodeError, KeyError, ValueError):
-        return try_fallback_chat_reply(normalized_message)
+        return build_local_open_chat_reply(message, normalized_message, history)
 
 @app.get("/")
 def app_shell():
