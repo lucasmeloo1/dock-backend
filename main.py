@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import ssl
+import time
 import unicodedata
 from urllib import error, request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -67,6 +68,8 @@ OPENAI_CHAT_MAX_OUTPUT_TOKENS = 220
 CHAT_TIMEOUT_SECONDS = int(os.getenv("CHAT_TIMEOUT_SECONDS", "12"))
 AI_TIMEOUT_SECONDS = int(os.getenv("AI_TIMEOUT_SECONDS", "15"))
 LIVE_DATA_TIMEOUT_SECONDS = int(os.getenv("LIVE_DATA_TIMEOUT_SECONDS", "8"))
+DB_INIT_MAX_ATTEMPTS = int(os.getenv("DB_INIT_MAX_ATTEMPTS", "12"))
+DB_INIT_RETRY_SECONDS = float(os.getenv("DB_INIT_RETRY_SECONDS", "2"))
 APP_TIMEZONE = load_app_timezone(os.getenv("APP_TIMEZONE"))
 APP_TIMEZONE_NAME = getattr(APP_TIMEZONE, "key", "UTC")
 
@@ -211,7 +214,26 @@ def init_db() -> None:
                 )
             """))
 
-init_db()
+def init_db_with_retry() -> None:
+    last_error: Exception | None = None
+    for attempt in range(1, DB_INIT_MAX_ATTEMPTS + 1):
+        try:
+            init_db()
+            return
+        except Exception as exc:
+            last_error = exc
+            if attempt == DB_INIT_MAX_ATTEMPTS:
+                break
+            print(
+                f"Dock database init failed on attempt {attempt}/{DB_INIT_MAX_ATTEMPTS}. "
+                f"Retrying in {DB_INIT_RETRY_SECONDS:.1f}s."
+            )
+            time.sleep(DB_INIT_RETRY_SECONDS)
+    raise RuntimeError("Dock could not initialize the database connection.") from last_error
+
+@app.on_event("startup")
+def startup_init() -> None:
+    init_db_with_retry()
 
 class Entry(BaseModel):
     text: str
