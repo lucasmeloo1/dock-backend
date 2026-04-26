@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 app = FastAPI()
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
+PROJECT_DIR = BASE_DIR.parent
+FRONTEND_DIR = PROJECT_DIR / "frontend"
 
 DEFAULT_SQLITE_URL = f"sqlite:///{BASE_DIR / 'dock.db'}"
 
@@ -86,7 +87,7 @@ Na maioria dos casos, responda em 2 a 4 frases.
 """
 
 engine = build_engine(DATABASE_URL)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 IS_SQLITE = engine.dialect.name == "sqlite"
 
 def init_db() -> None:
@@ -1726,7 +1727,7 @@ def chat_with_ai(message: str, history: list[Message], location: LocationContext
 
 @app.get("/")
 def app_shell():
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/health")
 def read_root():

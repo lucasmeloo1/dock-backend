@@ -10,8 +10,13 @@
   <div class="app-shell">
     <aside class="side-rail">
       <div class="rail-brand">
-        <img class="rail-logo" src="/static/assets/dock-logo.png" alt="Dock logo">
-        <img class="rail-wordmark" src="/static/assets/dock-wordmark.png" alt="Dock">
+        <div class="brand-mark">
+          <img class="rail-logo" src="/static/assets/dock-logo.png" alt="Dock logo">
+        </div>
+        <div class="brand-copy">
+          <img class="rail-wordmark" src="/static/assets/dock-wordmark.png" alt="Dock">
+          <p>Clareza operacional para rotina, estudo e finanças.</p>
+        </div>
       </div>
 
       <nav class="rail-nav sidebar-nav" aria-label="Navegação principal">
@@ -33,17 +38,18 @@
         </a>
       </nav>
 
-      <section class="rail-card sidebar-card">
+      <section class="rail-card sidebar-card context-card">
         <span class="metric-label">Contexto</span>
         <strong id="location-status">Localização não conectada</strong>
+        <p class="rail-copy">Permite clima ao vivo e respostas mais situadas quando você quiser contexto do momento.</p>
         <button class="secondary-button" id="location-button" type="button">Ativar localização</button>
       </section>
 
-      <section class="rail-card sidebar-card">
-        <span class="metric-label">Resumo</span>
+      <section class="rail-card sidebar-card summary-card">
+        <span class="metric-label">Pulso do dia</span>
         <div class="summary-list">
           <div class="summary-item">
-            <span>Hábitos</span>
+            <span>Hábitos ativos</span>
             <strong id="stat-habits">0</strong>
           </div>
           <div class="summary-item">
@@ -51,22 +57,27 @@
             <strong id="stat-study-today">0 min</strong>
           </div>
           <div class="summary-item">
-            <span>Saldo mês</span>
+            <span>Saldo do mês</span>
             <strong id="stat-month-balance">R$ 0,00</strong>
           </div>
         </div>
+      </section>
+
+      <section class="rail-card sidebar-card manifesto-card">
+        <span class="metric-label">Ritual</span>
+        <p class="rail-copy">Registre o que aconteceu no dia com linguagem natural. O Dock traduz isso em memória, painel e próximo passo.</p>
       </section>
     </aside>
 
     <main class="workspace">
       <header class="top-header content-header">
         <div class="top-left">
-          <p class="eyebrow">Dock App</p>
+          <p class="eyebrow">Dock OS</p>
           <h1 id="page-title">Conversa</h1>
-          <p class="header-note">Assistente inteligente para rotina, estudo e finanças.</p>
+          <p class="header-note" id="page-note">Converse com o Dock para organizar pensamento, registrar eventos e agir com menos fricção.</p>
         </div>
         <div class="top-right">
-          <span class="status-chip" id="status-source">Backend local</span>
+          <span class="status-chip" id="status-source">Motor Dock</span>
           <span class="status-chip primary" id="status-pill">Pronto</span>
         </div>
       </header>
@@ -74,35 +85,94 @@
       <section class="tab-panel active" data-panel="conversation">
         <section class="hero-grid">
           <article class="panel-card hero-primary">
-            <p class="eyebrow">Assistente</p>
-            <h2>Converse com o Dock</h2>
-            <p class="hero-copy">Pergunte naturalmente e receba respostas com contexto e próximo passo.</p>
-            <div class="prompt-row">
-              <button class="prompt-card" data-prompt="Quem é o founder da empresa?">Founder</button>
-              <button class="prompt-card" data-prompt="Qual o valor do dólar agora?">Dólar</button>
-              <button class="prompt-card" data-prompt="Qual a temperatura agora em SP?">Clima</button>
-              <button class="prompt-card" data-prompt="Me ajuda a organizar meu dia em 3 passos.">Meu dia</button>
+            <div class="hero-copy-block">
+              <p class="eyebrow">Centro de comando</p>
+              <h2>Menos ruído para pensar, registrar e executar.</h2>
+              <p class="hero-copy">O Dock funciona melhor quando você fala como pensa: ele responde, atualiza o painel e devolve o próximo passo com contexto.</p>
+            </div>
+
+            <div class="signal-grid">
+              <div class="signal-card">
+                <span class="metric-label">Hábitos ativos</span>
+                <strong id="hero-habits">0</strong>
+                <span class="signal-note">sob acompanhamento</span>
+              </div>
+              <div class="signal-card">
+                <span class="metric-label">Estudo hoje</span>
+                <strong id="hero-study">0 min</strong>
+                <span class="signal-note">volume já registrado</span>
+              </div>
+              <div class="signal-card">
+                <span class="metric-label">Saldo do mês</span>
+                <strong id="hero-balance">R$ 0,00</strong>
+                <span class="signal-note">resultado acumulado</span>
+              </div>
+            </div>
+
+            <div class="prompt-row prompt-grid">
+              <button class="prompt-card prompt-tile" data-prompt="Me ajuda a organizar meu dia em 3 passos.">
+                <span class="prompt-title">Organizar meu dia</span>
+                <span class="prompt-copy">Transforma confusão em prioridade clara.</span>
+              </button>
+              <button class="prompt-card prompt-tile" data-prompt="Hoje gastei 50 reais no mercado">
+                <span class="prompt-title">Registrar um gasto</span>
+                <span class="prompt-copy">Atualiza o financeiro sem abrir formulário.</span>
+              </button>
+              <button class="prompt-card prompt-tile" data-prompt="Estudei matemática por 45 minutos hoje">
+                <span class="prompt-title">Registrar estudo</span>
+                <span class="prompt-copy">Joga sessão e painel para o estado atual.</span>
+              </button>
+              <button class="prompt-card prompt-tile" data-prompt="Qual o valor do dólar agora?">
+                <span class="prompt-title">Consulta ao vivo</span>
+                <span class="prompt-copy">Cotação, clima e perguntas de contexto.</span>
+              </button>
             </div>
           </article>
 
-          <article class="panel-card hero-metrics">
+          <article class="panel-card hero-sidekick">
             <div class="metric-stack">
               <span class="metric-label">Fonte</span>
-              <strong id="conversation-metric-source">Backend local</strong>
+              <strong id="conversation-metric-source">Motor Dock</strong>
+              <p class="stack-copy">Mostra se a resposta veio de fluxo rápido, automação, painel ou IA.</p>
             </div>
+
             <div class="metric-stack">
               <span class="metric-label">Estado</span>
               <strong id="conversation-metric-status">Pronto</strong>
+              <p class="stack-copy">Use o chat como interface principal. O restante da UI reflete o que foi registrado.</p>
+            </div>
+
+            <div class="flow-list">
+              <div class="flow-item">
+                <span class="flow-kicker">Registrar</span>
+                <p>"Gastei 32 no Uber" ou "Estudei 45 minutos".</p>
+              </div>
+              <div class="flow-item">
+                <span class="flow-kicker">Perguntar</span>
+                <p>"O que eu devo priorizar?" ou "Quanto estudei essa semana?".</p>
+              </div>
+              <div class="flow-item">
+                <span class="flow-kicker">Acompanhar</span>
+                <p>Hábitos, estudo e dinheiro atualizados no mesmo painel.</p>
+              </div>
             </div>
           </article>
         </section>
 
         <section class="panel-card message-card">
-          <div class="message-list" id="message-list">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Conversa</p>
+              <h2>Fluxo ao vivo</h2>
+            </div>
+            <p class="message-hint">O painel do Dock reage às mensagens operacionais em tempo real.</p>
+          </div>
+
+          <div class="message-list" id="message-list" aria-live="polite">
             <article class="message dock">
               <div class="message-role">Dock</div>
               <div class="message-bubble">
-                Eu sou o Dock. Me faz uma pergunta e eu respondo com clareza, contexto e próximo passo.
+                Eu sou o Dock. Me fala o que aconteceu, o que você precisa decidir ou o que quer registrar agora.
               </div>
             </article>
           </div>
@@ -114,9 +184,18 @@
             id="message-input"
             name="message"
             rows="4"
-            placeholder="Ex.: estudei matemática 45 minutos hoje"
+            placeholder="Ex.: gastei 89 no mercado, estudei 45 minutos e preciso organizar amanhã"
             required
           ></textarea>
+
+          <div class="composer-shortcuts">
+            <button type="button" class="shortcut-chip" data-prompt="Hoje gastei 89 no mercado">Despesa</button>
+            <button type="button" class="shortcut-chip" data-prompt="Recebi 1200 de freela">Receita</button>
+            <button type="button" class="shortcut-chip" data-prompt="Estudei programação por 60 minutos hoje">Estudo</button>
+            <button type="button" class="shortcut-chip" data-prompt="Treinei hoje">Hábito</button>
+            <button type="button" class="shortcut-chip" data-prompt="Quanto estudei essa semana?">Resumo</button>
+          </div>
+
           <div class="composer-actions">
             <p class="composer-hint">Enter envia. Shift + Enter quebra linha.</p>
             <button type="submit" class="primary-button" id="send-button">Enviar</button>
@@ -159,7 +238,7 @@
                 <h2>Top hábitos</h2>
               </div>
             </div>
-            <div class="bars-list" id="habits-bars"></div>
+            <div class="bars-list" id="habits-bars" data-empty-title="Sem hábitos ativos" data-empty-copy="Registre check-ins pelo chat para o Dock começar a medir sua consistência."></div>
           </article>
         </section>
 
@@ -168,7 +247,7 @@
             <p class="eyebrow">Hábitos</p>
             <h2>Seu progresso</h2>
           </div>
-          <div id="habit-list" class="data-list"></div>
+          <div id="habit-list" class="data-list" data-empty-title="Sem hábitos ainda" data-empty-copy="Experimente registrar algo como “treinei hoje” ou criar um hábito para começar a acompanhar o ritmo."></div>
         </section>
       </section>
 
@@ -206,7 +285,7 @@
                 <h2>Últimos 7 dias</h2>
               </div>
             </div>
-            <div class="bars-list daily-bars" id="study-bars"></div>
+            <div class="bars-list daily-bars" id="study-bars" data-empty-title="Sem estudo registrado" data-empty-copy="Conte ao Dock o que você estudou hoje e ele monta esse ritmo automaticamente."></div>
           </article>
         </section>
 
@@ -215,7 +294,7 @@
             <p class="eyebrow">Estudo</p>
             <h2>Resumo da semana</h2>
           </div>
-          <div id="study-list" class="data-list"></div>
+          <div id="study-list" class="data-list" data-empty-title="Sem sessões ainda" data-empty-copy="Use o chat para registrar sessões como “estudei matemática por 45 minutos”."></div>
         </section>
       </section>
 
@@ -269,16 +348,16 @@
                 <h2>Saídas do mês</h2>
               </div>
             </div>
-            <div class="bars-list" id="finance-bars"></div>
+            <div class="bars-list" id="finance-bars" data-empty-title="Sem despesas no período" data-empty-copy="Quando você registrar gastos, o Dock organiza as categorias automaticamente."></div>
           </article>
         </section>
 
         <section class="panel-card list-card">
           <div class="section-head">
             <p class="eyebrow">Financeiro</p>
-            <h2>Categorias do mês</h2>
+            <h2>Lançamentos recentes</h2>
           </div>
-          <div id="finance-list" class="data-list"></div>
+          <div id="finance-list" class="data-list" data-empty-title="Sem lançamentos ainda" data-empty-copy="Experimente dizer “gastei 50 no mercado” ou “recebi 1200 de freela”."></div>
         </section>
       </section>
     </main>

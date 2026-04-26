@@ -3,4 +3,5 @@ __pycache__/
 .DS_Store
 .venv/
 venv/
-dock.db
+*.db
+lazari_vs_lucas_quiz.html

@@ -1,17 +1,39 @@
 # Dock
 
-App FastAPI com interface web e dashboard simples para conversa, hábitos, estudo e finanças.
+Dock agora está organizado em duas áreas claras:
+
+- `backend/`: API FastAPI, regras do produto, integração com banco e deploy.
+- `frontend/`: interface web servida pelo backend.
+
+O app continua funcionando como uma única entrega, mas com a separação pronta para lapidar backend e frontend sem misturar tudo na raiz.
 
 ## Rodar local
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload
+pip install -r backend/requirements.txt
+uvicorn backend.main:app --reload
 ```
 
 Abra `http://127.0.0.1:8000`.
+
+## Estrutura
+
+```text
+.
+├── backend/
+│   ├── __init__.py
+│   ├── main.py
+│   └── requirements.txt
+├── frontend/
+│   ├── index.html
+│   ├── app.css
+│   ├── app.js
+│   └── assets/
+├── render.yaml
+└── README.md
+```
 
 ## Deploy grátis no Render
 
@@ -32,7 +54,7 @@ O projeto já inclui `render.yaml`, então o fluxo é:
 
 ### Observações
 
-- O banco local `dock.db` não deve ser usado em produção.
+- O banco local SQLite fica em `backend/dock.db` e não deve ser usado em produção.
 - Em deploy grátis, o app pode dormir por inatividade.
 - Sem `OPENAI_API_KEY`, o Dock continua respondendo pelos fluxos rápidos, operacionais e de dashboard, sem depender de `ollama` no link público.
 - `AI_PROVIDER=ollama` faz sentido só em ambiente local com Ollama rodando.
